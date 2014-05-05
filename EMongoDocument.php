@@ -843,22 +843,30 @@ abstract class EMongoDocument extends EMongoEmbeddedDocument
 		if($this->beforeFind())
 		{
 			$this->applyScopes($criteria);
-
-			$cursor = $this->getCollection()->find($criteria->getConditions());
-
-			if($criteria->getSort() !== null)
-				$cursor->sort($criteria->getSort());
-			if($criteria->getLimit() !== null)
-				$cursor->limit($criteria->getLimit());
-			if($criteria->getOffset() !== null)
-				$cursor->skip($criteria->getOffset());
-			if($criteria->getSelect())
-				$cursor->fields($criteria->getSelect(true));
-
-			if($this->getUseCursor())
-				return new EMongoCursor($cursor, $this->model());
-			else
-				return $this->populateRecords($cursor);
+			
+			$distinctField = $criteria->getDistinctField();
+			if($distinctField === null) {
+				$cursor = $this->getCollection()->find($criteria->getConditions());
+			
+				if($criteria->getSort() !== null)
+					$cursor->sort($criteria->getSort());
+				if($criteria->getLimit() !== null)
+					$cursor->limit($criteria->getLimit());
+				if($criteria->getOffset() !== null)
+					$cursor->skip($criteria->getOffset());
+				if($criteria->getSelect())
+					$cursor->fields($criteria->getSelect(true));
+				
+				if($this->getUseCursor())
+					return new EMongoCursor($cursor, $this->model());
+				else
+					return $this->populateRecords($cursor);
+			} else {
+				$distinctValues = $this->getCollection()->distinct($distinctField,$criteria->getConditions());
+				foreach($distinctValues as $index=>$value)
+					$distinctValues[$index] = array($distinctField=>$value);
+				return $this->populateRecords($distinctValues);
+			}
 		}
 		return array();
 	}
@@ -953,8 +961,14 @@ abstract class EMongoDocument extends EMongoEmbeddedDocument
 		Yii::trace(get_class($this).'.count()','ext.MongoDb.EMongoDocument');
 
 		$this->applyScopes($criteria);
-
-		return $this->getCollection()->count($criteria->getConditions());
+		
+		$distinctField = $criteria->getDistinctField();
+		if($distinctField === null) {
+			return $this->getCollection()->count($criteria->getConditions());
+		} else {
+			$data = $this->findAll($criteria);
+			return count($data);
+		}
 	}
 
 	/**

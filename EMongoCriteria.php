@@ -74,7 +74,8 @@ class EMongoCriteria extends CComponent
 	private $_conditions	= array();
 	private $_sort			= array();
 	private $_workingFields	= array();
-
+	private $_distinctField = null;
+	
 	/**
 	 * Constructor
 	 * Example criteria:
@@ -135,6 +136,8 @@ class EMongoCriteria extends CComponent
 				$this->offset($criteria['offset']);
 			if(isset($criteria['sort']))
 				$this->setSort($criteria['sort']);
+			if(isset($criteria['distinctField']))
+				$this->setDistinctField($criteria['distinctField']);
 		}
 		else if($criteria instanceof EMongoCriteria)
 			$this->mergeWith($criteria);
@@ -442,4 +445,15 @@ class EMongoCriteria extends CComponent
 
 		return $this;
 	}
+
+	public function getDistinctField()
+	{
+		return $this->_distinctField;
+	}
+	
+	public function setDistinctField($aDistinctField)
+	{
+		$this->_distinctField = $aDistinctField;
+	}
+	
 }
